@@ -22,4 +22,5 @@ jobs:
         run: sleep 5
 
       - name: Test API
-        run: curl -f http://localhost:5000 || exit 1
+        run: |
+          curl -f http://localhost:5000
