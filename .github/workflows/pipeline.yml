@@ -6,11 +6,11 @@ on:
       - main
 
 jobs:
-  build:
+  build-test-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v3
 
       - name: Setup Python
@@ -19,24 +19,45 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
 
-      - name: Run tests
+      - name: Run unit tests
         run: pytest
 
       - name: Build Docker image
         run: docker build -t devops-app .
 
       - name: Run container
-        run: docker run -d -p 5000:5000 devops-app
+        run: docker run -d -p 5000:5000 --name devops-test devops-app
 
-      - name: Wait for app
+      - name: Wait for local app
         run: |
           for i in {1..10}; do
-            curl -f http://localhost:5000 && exit 0
+            if curl -f --max-time 3 http://localhost:5000; then
+              echo "Local app is up"
+              exit 0
+            fi
+            echo "Waiting... ($i)"
             sleep 2
           done
+          echo "Local app failed"
+          docker logs devops-test
           exit 1
 
-      - name: Test API
-        run: curl -f http://localhost:5000
+      - name: Test deployed app (Render)
+        run: |
+          for i in {1..10}; do
+            if curl -f --max-time 5 https://devops-project-lwsg.onrender.com/health; then
+              echo "Production OK"
+              exit 0
+            fi
+            echo "Retry... ($i)"
+            sleep 5
+          done
+          echo "Production FAILED"
+          exit 1
+
+      - name: Cleanup container
+        if: always()
+        run: docker stop devops-test || true && docker rm devops-test || true
