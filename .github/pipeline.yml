@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Build Docker
+      run: docker build -t devops-app .
+
+    - name: Run container
+      run: |
+        docker run -d -p 5000:5000 devops-app
+        sleep 5
+
+    - name: Test API
+      run: curl -f http://localhost:5000
