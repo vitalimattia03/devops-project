@@ -81,12 +81,54 @@ def home():
 
 @app.route("/health")
 def health():
-    uptime = time.time() - start_time
+    uptime = round(time.time() - start_time, 2)
 
-    return jsonify(
-        status="ok",
-        uptime_seconds=round(uptime, 2)
-    ), 200
+    if "text/html" in request.headers.get("Accept", ""):
+        return render_template_string("""
+        <html>
+        <head>
+            <title>Health Status</title>
+            <style>
+                body {
+                    background: #020617;
+                    color: #e2e8f0;
+                    font-family: Arial;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                }
+                .card {
+                    background: #1e293b;
+                    padding: 40px;
+                    border-radius: 16px;
+                    text-align: center;
+                    box-shadow: 0 0 25px rgba(0,0,0,0.5);
+                }
+                .status {
+                    color: #22c55e;
+                    font-size: 28px;
+                    margin: 10px 0;
+                }
+                .meta {
+                    color: #94a3b8;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="card">
+                <h1>System Health</h1>
+                <div class="status">OK</div>
+                <div class="meta">Uptime: {{ uptime }} sec</div>
+            </div>
+        </body>
+        </html>
+        """, uptime=uptime)
+
+    return {
+        "status": "ok",
+        "uptime_seconds": uptime
+    }, 200
 
 @app.route("/api")
 def api():
@@ -98,21 +140,35 @@ def api():
 def metrics():
     uptime = time.time() - start_time
 
-    return f"""
+    return f"""# =========================
+# DevOps Metrics
+# =========================
+
 # HELP requests_total Total number of requests
 # TYPE requests_total counter
 requests_total {requests_count}
 
 # HELP uptime_seconds Application uptime
 # TYPE uptime_seconds gauge
-uptime_seconds {uptime}
+uptime_seconds {uptime:.2f}
 """, 200, {"Content-Type": "text/plain"}
 
-@app.route("/fail")
-def fail():
-    return jsonify(
-        error="forced failure"
-    ), 500
+@app.route("/metrics")
+def metrics():
+    uptime = time.time() - start_time
+
+    return f"""# =========================
+# DevOps Metrics
+# =========================
+
+# HELP requests_total Total number of requests
+# TYPE requests_total counter
+requests_total {requests_count}
+
+# HELP uptime_seconds Application uptime
+# TYPE uptime_seconds gauge
+uptime_seconds {uptime:.2f}
+""", 200, {"Content-Type": "text/plain"}
 
 @app.route("/dashboard")
 def dashboard():
@@ -170,4 +226,4 @@ def dashboard():
 # Run
 # ----------------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5001)
