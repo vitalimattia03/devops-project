@@ -153,7 +153,7 @@ requests_total {requests_count}
 uptime_seconds {uptime:.2f}
 """, 200, {"Content-Type": "text/plain"}
 
-@app.route("/metrics")
+@app.route("/metrics/ui")
 def metrics():
     uptime = time.time() - start_time
 
